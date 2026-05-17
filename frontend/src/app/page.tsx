@@ -1,11 +1,9 @@
-import Image from "next/image";
+import Chat from "@/components/Chat"
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center">
-      <h1 className="text-4x1 font-bold">
-        MarketMind
-      </h1>
+    <main className="min-h-screen bg-black text-white flex items-center justify-center p-8">
+      <Chat />
     </main>
   );
 }
