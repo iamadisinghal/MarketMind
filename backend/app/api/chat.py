@@ -5,10 +5,12 @@ from app.graph.chat_graph import chat_graph
 
 router = APIRouter()
 
+
 @router.post("/chat")
 def chat(request: ChatRequest):
+
     result = chat_graph.invoke({
-        "message": request.message
+        "messages": request.messages
     })
 
     return {

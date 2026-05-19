@@ -32,9 +32,10 @@ export default function Chat() {
     try {
       setLoading(true);
 
-      const result = await sendMessage({
-        message: currentInput,
-      });
+      const result = await sendMessage([
+        ...messages,
+        userMessage,
+      ]);
 
       const assistantMessage: Message = {
         role: "assistant",

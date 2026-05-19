@@ -1,13 +1,35 @@
 from typing import TypedDict
-from langgraph.graph import StateGraph, END
 from app.services.llm import llm
+from langgraph.graph import StateGraph, END
+from langchain_core.messages import HumanMessage, AIMessage
 
 class ChatState(TypedDict):
-    message:str
+    messages:str
     response:str
 
 def chatbot_node(state: ChatState):
-    response = llm.invoke(state["message"])
+    chat_history = []
+
+    for message in state['messages']:
+        role = getattr(message, "role", None)
+        content = getattr(message, "content", None)
+
+        if role is None:
+            role = message["role"]
+
+        if content is None:
+            content = message["content"]
+
+        if role == "user":
+            chat_history.append(
+                HumanMessage(content=content)
+            )
+        else:
+            chat_history.append(
+                AIMessage(content=content)
+            )
+
+    response = llm.invoke(chat_history)
 
     return {
         "response": response.content
