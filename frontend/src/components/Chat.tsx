@@ -4,54 +4,99 @@ import { useState } from "react";
 
 import { sendMessage } from "@/lib/api";
 
+import { Message } from "@/types/chat";
+
+import MessageBubble from "./MessageBubble";
+
 export default function Chat() {
-  const [message, setMessage] = useState("");
-  const [response, setResponse] = useState("");
+  const [input, setInput] = useState("");
+
+  const [messages, setMessages] = useState<Message[]>([]);
+
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit() {
-    if (!message.trim()) return;
+    if (!input.trim()) return;
+
+    const userMessage: Message = {
+      role: "user",
+      content: input,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    const currentInput = input;
+
+    setInput("");
 
     try {
       setLoading(true);
 
       const result = await sendMessage({
-        message,
+        message: currentInput,
       });
 
-      setResponse(result.response);
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: result.response,
+      };
+
+      setMessages((prev) => [
+        ...prev,
+        assistantMessage,
+      ]);
     } catch (error) {
       console.error(error);
-      setResponse("Something went wrong.");
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Something went wrong.",
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="w-full max-w-3xl space-y-4">
-      <h1 className="text-4xl font-bold">
+    <div className="w-full max-w-4xl h-[90vh] flex flex-col">
+      <h1 className="text-4xl font-bold mb-6">
         MarketMind
       </h1>
 
-      <textarea
-        className="w-full p-4 rounded-lg bg-zinc-900 border border-zinc-700"
-        rows={4}
-        placeholder="Ask something..."
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-      />
+      <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 rounded-xl bg-zinc-950 border border-zinc-800">
+        {messages.map((message, index) => (
+          <MessageBubble
+            key={index}
+            message={message}
+          />
+        ))}
 
-      <button
-        onClick={handleSubmit}
-        disabled={loading}
-        className="px-6 py-3 bg-white text-black rounded-lg font-semibold"
-      >
-        {loading ? "Thinking..." : "Send"}
-      </button>
+        {loading && (
+          <div className="text-zinc-400">
+            Thinking...
+          </div>
+        )}
+      </div>
 
-      <div className="p-4 rounded-lg bg-zinc-900 border border-zinc-700 min-h-[200px] whitespace-pre-wrap">
-        {response}
+      <div className="flex gap-4">
+        <textarea
+          className="flex-1 p-4 rounded-xl bg-zinc-900 border border-zinc-700 resize-none"
+          rows={3}
+          placeholder="Ask MarketMind something..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="px-6 py-4 bg-white text-black rounded-xl font-semibold"
+        >
+          Send
+        </button>
       </div>
     </div>
   );
