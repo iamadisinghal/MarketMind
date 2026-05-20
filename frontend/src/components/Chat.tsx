@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { sendMessage } from "@/lib/api";
+import { streamMessage } from "@/lib/api";
 
 import { Message } from "@/types/chat";
 
@@ -30,22 +30,51 @@ export default function Chat() {
     setInput("");
 
     try {
-      setLoading(true);
+        setLoading(true);
 
-      const result = await sendMessage([
-        ...messages,
-        userMessage,
-      ]);
+    //   const result = await sendMessage([
+    //     ...messages,
+    //     userMessage,
+    //   ]);
 
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: result.response,
-      };
+    //   const assistantMessage: Message = {
+    //     role: "assistant",
+    //     content: result.response,
+    //   };
 
-      setMessages((prev) => [
-        ...prev,
-        assistantMessage,
-      ]);
+    //   setMessages((prev) => [
+    //     ...prev,
+    //     assistantMessage,
+    //   ]);
+
+        let streamedResponse = "";
+
+        setMessages((prev) => [
+            ...prev,
+            {
+                role: "assistant",
+                content: "",
+            },
+        ]);
+
+        await streamMessage(
+            [...messages, userMessage],
+
+            (token) => {
+                streamedResponse += token;
+
+                setMessages((prev) => {
+                    const updated = [...prev];
+
+                    updated[updated.length - 1] = {
+                        role: "assistant",
+                        content: streamedResponse,
+                    };
+
+                    return updated;
+                })
+            }
+        )
     } catch (error) {
       console.error(error);
 
