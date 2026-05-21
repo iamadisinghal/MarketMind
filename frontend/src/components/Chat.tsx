@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { streamMessage } from "@/lib/api";
 
@@ -9,73 +9,78 @@ import { Message } from "@/types/chat";
 import MessageBubble from "./MessageBubble";
 
 export default function Chat() {
+
   const [input, setInput] = useState("");
 
   const [messages, setMessages] = useState<Message[]>([]);
 
   const [loading, setLoading] = useState(false);
 
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+
+  }, [messages]);
+
   async function handleSubmit() {
-    if (!input.trim()) return;
+
+    if (!input.trim() || loading) return;
 
     const userMessage: Message = {
       role: "user",
       content: input,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+    ]);
 
     const currentInput = input;
 
     setInput("");
 
     try {
-        setLoading(true);
 
-    //   const result = await sendMessage([
-    //     ...messages,
-    //     userMessage,
-    //   ]);
+      setLoading(true);
 
-    //   const assistantMessage: Message = {
-    //     role: "assistant",
-    //     content: result.response,
-    //   };
+      let streamedResponse = "";
 
-    //   setMessages((prev) => [
-    //     ...prev,
-    //     assistantMessage,
-    //   ]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "",
+        },
+      ]);
 
-        let streamedResponse = "";
+      await streamMessage(
+        [...messages, userMessage],
 
-        setMessages((prev) => [
-            ...prev,
-            {
-                role: "assistant",
-                content: "",
-            },
-        ]);
+        (token) => {
 
-        await streamMessage(
-            [...messages, userMessage],
+          streamedResponse += token;
 
-            (token) => {
-                streamedResponse += token;
+          setMessages((prev) => {
 
-                setMessages((prev) => {
-                    const updated = [...prev];
+            const updated = [...prev];
 
-                    updated[updated.length - 1] = {
-                        role: "assistant",
-                        content: streamedResponse,
-                    };
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content: streamedResponse,
+            };
 
-                    return updated;
-                })
-            }
-        )
+            return updated;
+          });
+        }
+      );
+
     } catch (error) {
+
       console.error(error);
 
       setMessages((prev) => [
@@ -85,18 +90,22 @@ export default function Chat() {
           content: "Something went wrong.",
         },
       ]);
+
     } finally {
+
       setLoading(false);
     }
   }
 
   return (
     <div className="w-full max-w-4xl h-[90vh] flex flex-col">
+
       <h1 className="text-4xl font-bold mb-6">
         MarketMind
       </h1>
 
       <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 rounded-xl bg-zinc-950 border border-zinc-800">
+
         {messages.map((message, index) => (
           <MessageBubble
             key={index}
@@ -105,28 +114,42 @@ export default function Chat() {
         ))}
 
         {loading && (
-          <div className="text-zinc-400">
-            Thinking...
+          <div className="text-zinc-400 animate-pulse">
+            MarketMind is thinking...
           </div>
         )}
+
+        <div ref={bottomRef} />
       </div>
 
       <div className="flex gap-4">
+
         <textarea
           className="flex-1 p-4 rounded-xl bg-zinc-900 border border-zinc-700 resize-none"
           rows={3}
           placeholder="Ask MarketMind something..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+
+            if (
+              e.key === "Enter" &&
+              !e.shiftKey
+            ) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
         />
 
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="px-6 py-4 bg-white text-black rounded-xl font-semibold"
+          className="px-6 py-4 bg-white text-black rounded-xl font-semibold disabled:opacity-50"
         >
           Send
         </button>
+
       </div>
     </div>
   );

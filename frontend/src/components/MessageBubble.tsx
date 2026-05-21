@@ -1,4 +1,5 @@
 import { Message } from "@/types/chat";
+import MarkdownRenderer from "./MarkdownRenderer";
 
 interface Props {
   message: Message;
@@ -20,7 +21,7 @@ export default function MessageBubble({ message }: Props) {
             : "bg-zinc-800 text-white"
         }`}
       >
-        {message.content}
+        <MarkdownRenderer content={message.content} />
       </div>
     </div>
   );
