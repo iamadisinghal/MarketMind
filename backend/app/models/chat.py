@@ -1,4 +1,4 @@
-from typing import Literal, List
+from typing import Literal, List, Optional
 
 from pydantic import BaseModel
 
@@ -8,3 +8,5 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages:List[Message]
+
+    conversation_id: Optional[int] = None
